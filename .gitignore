@@ -1,0 +1,13 @@
+﻿.venv/
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.idea/
+venv/
+ByteTrack/
+data/
+speed/__pycache__/
+.idea
+__pycache__
