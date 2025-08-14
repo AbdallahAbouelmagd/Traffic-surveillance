@@ -1,126 +1,144 @@
-SuperResolution Aktivieren oder deaktivieren:
- use_super_resolution = True/false in der main.py Datei
+# Traffic-surveillance
 
-Perspektiv-Kalibrierung (Pflicht für Geschwindigkeitsmessung)
-Um die Geschwindigkeit korrekt in km/h zu berechnen, musst du zuerst das Kamerabild perspektivisch entzerren. Das funktioniert über eine Kalibrierung.
+This project provides tools for:
+- Detecting lanes in videos or livestreams.
+- Measuring vehicle speed in km/h (with required perspective calibration).
+- Distance and Traffic analysis.
+- Optional super-resolution for enhanced image clarity.
 
-Schritt-für-Schritt Anleitung
-Öffne die Datei
-speed/calibrate_perspective.py (oder wie deine Kalibrierungsdatei heißt).
+---
 
-Ändere den Pfad zum Video
-Bearbeite am Anfang der Datei die Zeile:
+## Installation & Setup
 
-python
-speed/calibrate.py
-VIDEO_PATH = ""
-→ Gib hier den Pfad zu deinem gewünschten Video an.
+### 1. Install Python
+- Install **Python 3.10.11** and add it to your system PATH.
 
-Starte die Kalibrierung
+### 2. Open a Terminal
+- Navigate to the project folder.
 
-Führe die Datei aus:
+### 3. Create a Virtual Environment
+```bash
+py -3.10 -m venv venv310
+```
+
+### 4. Activate the Virtual Environment
+```bash
+.\venv310\Scripts\activate
+```
+
+### 5. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 6. Configure the Video Path
+- In `main.py`, set the path to the video you want to analyze.
+
+### 7. Remove Old Lane Data (if needed)
+- If lanes for the selected video have not been defined yet, delete the file:
+```
+data/lanes.pkl
+```
+This file stores the last defined lanes only.
+
+### 8. Run the Program
+```bash
+python main.py
+```
+
+---
+
+## Optional Settings
+
+### Enable or Disable Super Resolution
+In `main.py`:
+```python
+use_super_resolution = True  # or False
+```
+
+---
+
+## Perspective Calibration (Required for Speed Measurement)
+
+To measure speeds correctly in km/h, you must first perform **perspective calibration**.
+
+### Step-by-Step Calibration
+1. Open:
+```
+speed/calibrate_perspective.py
+```
+(or your calibration file).
+
+2. Set the video path:
+```python
+VIDEO_PATH = "path/to/your/video.mp4"
+```
+
+3. Run the calibration:
+```bash
 python speed/calibrate_perspective.py
-Wähle Kalibrierungsmethode in der Konsole
-Es erscheinen zwei Optionen:
+```
 
-Wähle Kalibrierungsmethode:
-1 = Automatisch (Segformer)
-2 = Manuell (4 Punkte klicken)
-👉 Eingabe (1 oder 2):
-Gib 1 ein für automatische Kalibrierung (nutzt KI zur Straßenerkennung).
+4. Choose the calibration method:
+   - **1** = Automatic (Segformer AI-based road detection)
+   - **2** = Manual (click 4 points to define road rectangle: front/back left/right lane markers)
 
-Gib 2 ein für manuelle Kalibrierung:
+5. Save the calibration:
+   - The perspective matrix is stored in:
+     ```
+     KAL/MATFILE.npy
+     ```
+   - This file will be loaded automatically during analysis.
 
-Du klickst vier Punkte im Bild an, die ein Rechteck der Straße darstellen (z. B. Spurlinien vorne/hinten links/rechts).
+⚠️ **Important**: Perform calibration before your first analysis. Without it, real speeds (km/h) cannot be calculated.
 
-Matrix wird gespeichert
-Die Perspektivmatrix wird automatisch unter KAL/MATFILE.npy gespeichert.
-Diese Datei wird später automatisch beim Start der Analyse geladen.
+---
 
-Wichtig:
-Führe diesen Schritt vor der ersten Analyse durch.
+## Lane Definition Guide
 
-Ohne Kalibrierung können keine realen Geschwindigkeiten (km/h) berechnet werden.
+When the program starts, the first frame of the video/stream is shown with **green lines** (auto-detected lanes). Selected lanes turn **red**.
 
+### Step 1: Selecting Lane Lines
+- Select correct lines in order, starting from **rightmost or leftmost**.
+- Select only **one line per lane** (duplicates may exist).
+- If there’s an obstacle between lanes (e.g., concrete barrier), press **N** before selecting the next line to start a **new group**.
+- Continue selecting until all desired lines are chosen.
+- Press **S** to save selection.
 
-# Anleitung zur Installation und Ausführung:
+### Step 2: Adjusting Lines (Bezier Curves)
+- After saving, the line adjustment window opens.
+- Each line has:
+  - **2 green points** (start & end) – adjust length.
+  - **1 red point** (curve control) – adjust curvature.
+- When finished, press **Q** to exit calibration.
+- The system will switch to traffic analysis with your selected lanes shown as polygons.
 
-1-Installiere Python 3.10.11 und füge es zum Systempfad hinzu.
-2-Öffne ein Terminal und navigiere in den Projektordner.
-3-Erstelle eine neue virtuelle Umgebung mit der richtigen Python-Version:
-    py -3.10 -m venv venv310
-4-Aktiviere die virtuelle Umgebung:
-    .\venv310\Scripts\Activate
-5-Installiere die benötigten Pakete aus der requirements.txt:
-    pip install -r requirements.txt
-6-Überprüfe den Pfad zum Video, das analysiert werden soll, in der Datei main.py.
-7-Lösche die Datei lanes.pkl im Verzeichnis data, wenn noch keine Fahrspuren für den gewählten Videopfad definiert wurden. Die Datei lanes.pkl speichert ausschließlich die zuletzt definierten Fahrspuren.
-8-Starte das Programm:
-    python main.py
-# Fahrspuren-Definitionsanleitung:
-Schritt 1: Auswahl der Fahrbahnlinien:
-Beim Start wird der erste Frame des Videos oder Livestreams angezeigt – mit grünen Linien überlagert, die automatisch erkannt wurden, und die bei Auswahl rot werden.
+**If not all lanes were detected:**
+- **Manual Definition immediately**:
+  - Press **S** without selecting lines to start manual definition.
+- **Partial Selection**:
+  - Select detected lines, then press **S** to define missing lines manually.
 
--Wähle die korrekten Linien in Reihenfolge aus, beginnend entweder von rechts oder von links.
+### Step 3: Manual Lane Definition
+- Click **three points** along the desired lane line:
+  1. Top of image (furthest point)
+  2. Middle
+  3. Bottom (closest to camera)
+- A Bezier curve will be created, which can be adjusted as in Step 2.
 
--Wähle nur eine Linie pro Spur, da dieselbe Spur mehrfach oder fälschlicherweise erkannt worden sein kann.
+**New Group in Manual Mode**:
+- If you don’t want a line to connect with the previous one:
+  - Press **N** to enable New Group mode.
+  - Define the line by clicking three points.
+  - Mode automatically turns off after creation.
 
--Wenn sich zwischen zwei Spuren Straßenhindernisse (z.B. Betonblöcke) befinden, drücke vor dem Auswählen der nächsten Linie die Taste N, um den „Neue-Gruppe“-Modus zu aktivieren.
-Dadurch wird verhindert, dass Linien automatisch verbunden werden und ein falsches Polygon entsteht.
+---
 
--Nach dem Drücken von N wähle die nächste Linie wie gewohnt aus. Der „Neue-Gruppe“-Modus wird danach automatisch deaktiviert.
+## Summary of Controls
+| Key | Action |
+|-----|--------|
+| **N** | Start new lane group |
+| **S** | Save selection / proceed |
+| **Q** | Quit adjustment mode |
 
--Fahre mit der Auswahl weiterer Linien fort.
-
-Wenn alle gewünschten Linien ausgewählt wurden, drücke S, um die Auswahl zu speichern.
-
-Schritt 2: Anpassung der Linien (Bezier-Kurven)
-Nach dem Speichern öffnet sich automatisch das Fenster zur Anpassung der Linien als Bezier-Kurven.
-
--Jede Linie wird nun als Kurve mit zwei grünen Punkten (Anfang und Ende) angezeigt.
-
-    Ziehe die grünen Punkte, um die Länge der Linie anzupassen.
-
--Ein roter Punkt auf der Kurve ermöglicht das Anpassen der Krümmung.
-
-    Ziehe diesen Punkt nach oben/unten oder links/rechts, um die Form an die tatsächliche Fahrspur anzupassen.
-
--Wenn die Bearbeitung abgeschlossen ist, drücke Q, um den Kalibrierungsmodus zu verlassen.
-    Das System wechselt automatisch zum Fenster für die Verkehrsanalyse, wobei die gewählten Spuren als farbige Polygone dargestellt werden.
-
-* Wenn nicht alle Linien erkannt wurden
-Falls im ersten Schritt nicht alle gewünschten Fahrbahnlinien erkannt wurden, gibt es zwei Optionen:
-
--Manuelle Definition sofort starten:
-    Drücke S, ohne Linien auszuwählen, um direkt zur manuellen Definition zu wechseln.
-
--Teilweise Auswahl:
-    Wenn z.B. nur die Linie ganz rechts oder links erkannt wurde:
-
-        Wähle diese Linie und weitere angrenzende Linien aus.
-
-        Sobald eine gewünschte Linie fehlt oder nicht auswählbar ist, drücke S, um den Rest manuell zu definieren.
-
-Schritt 3: Manuelle Definition von Linien
-Im manuellen Modus klickst du drei Punkte entlang der gewünschten Fahrbahnlinie:
-
--Erster Punkt: oben im Bild (entferntester Punkt)
-
--Zweiter Punkt: in der Mitte
-
--Dritter Punkt: unten im Bild (näher zur Kamera)
-
-Diese Punkte werden zu einer Bezier-Kurve verbunden, die du anschließend genauso anpassen kannst wie zuvor.
-
-Diese Reihenfolge sorgt für eine saubere Verbindung mit bestehenden Linien und ermöglicht die korrekte Bildung von zusammenhängenden Polygonen.
-
-Neue Gruppe im manuellen Modus:
--Wenn du eine Linie nicht mit der vorherigen verbinden möchtest (z.B. wegen Straßenhindernissen):
-
--Drücke N, um den Neue-Gruppe-Modus zu aktivieren.
-
--Klicke drei Punkte zur Definition der Linie.
-
--Nach dem Erstellen der Linie wird der Modus automatisch deaktiviert, und du kannst mit der normalen Definition weitermachen.
-
-
+---
